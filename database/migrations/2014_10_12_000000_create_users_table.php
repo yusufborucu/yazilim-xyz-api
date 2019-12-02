@@ -19,7 +19,6 @@ class CreateUsersTable extends Migration
             $table->string('email')->unique();
             $table->string('password');
             $table->string('salt', 10);
-            $table->string('google_id')->nullable();
             $table->string('image')->nullable();
             $table->integer('score')->default(0);
             $table->string('about', 500)->nullable();
