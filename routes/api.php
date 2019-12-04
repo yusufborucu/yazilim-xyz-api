@@ -13,6 +13,8 @@ Route::get('last_questions', 'QuestionController@last_questions');
 Route::group(['middleware' => 'auth:api'], function() {
     // KULLANICI İŞLEMLERİ
     Route::get('logout', 'UserController@logout');
+    Route::get('profile', 'UserController@profile');
+    Route::put('profile', 'UserController@update_profile');
 
     // SORU İŞLEMLERİ
     Route::apiResource('question', 'QuestionController');

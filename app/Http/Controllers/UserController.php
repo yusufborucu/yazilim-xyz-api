@@ -2,12 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Answer;
 use App\Models\OAuthAccessToken;
+use App\Models\Question;
 use App\Necessary;
 use App\User;
+use Carbon\Carbon;
 use Validator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Intervention\Image\ImageManagerStatic as Image;
+use File;
 
 class UserController extends Controller
 {
@@ -55,9 +60,6 @@ class UserController extends Controller
             if (Auth::attempt(['email' => request('email'), 'password' => request('password') . $existUser->salt])) {
                 $user = Auth::user();
                 $success['token'] = $user->createToken('MyApp')->accessToken;
-                $success['user_id'] = $user->id;
-                $success['email'] = $user->email;
-                $success['username'] = $user->username;
                 return response()->json($success, 200);
             } else {
                 return response()->json(['message' => 'E-posta adresi veya parola yanlış.'], 401);
@@ -65,13 +67,6 @@ class UserController extends Controller
         } else {
             return response()->json(['message' => 'Bu e-posta adresi sistemde kayıtlı değil.'], 401);
         }
-    }
-
-    public function logout()
-    {
-        $user = Auth::user();
-        OAuthAccessToken::where('user_id', $user->id)->delete();
-        return response()->json(['message' => 'Başarıyla çıkış yaptınız.'], 200);
     }
 
     public function forgot()
@@ -137,6 +132,68 @@ class UserController extends Controller
             return response()->json(['message' => 'Parola sıfırlama işlemi başarıyla tamamlandı.'], 200);
         } else {
             return response()->json(['message' => 'Böyle bir kullanıcı mevcut değil.'], 401);
+        }
+    }
+
+    public function logout()
+    {
+        $user = Auth::user();
+        OAuthAccessToken::where('user_id', $user->id)->delete();
+        return response()->json(['message' => 'Başarıyla çıkış yaptınız.'], 200);
+    }
+
+    public function profile()
+    {
+        $user = Auth::user();
+        $questions = Question::with('answers')->where('user_id', $user->id)->get();
+        $answer_count_sum = 0;
+        foreach ($questions as $question) {
+            $answer_count = Answer::where('question_id', $question->id)->count();
+            $answer_count_sum += $answer_count;
+        }
+        $response = (object)array(
+            'username' => $user->username,
+            'image' => $user->image,
+            'score' => $user->score,
+            'about' => $user->about,
+            'question_count' => $questions->count(),
+            'answer_count' => $answer_count_sum
+        );
+        return response()->json($response, 200);
+    }
+
+    public function update_profile()
+    {
+        $validator = Validator::make(request()->all(), [
+            'about' => 'required'
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Lütfen tüm alanları doldurunuz.'], 400);
+        }
+
+        $user = Auth::user();
+        $input = request()->all();
+
+        if (request()->file('image') != null) {
+            $image = request()->file('image');
+            $extension = $image->getClientOriginalExtension();
+            $fileName = $user->id . '_' . Carbon::now()->format('YmdHis') . '.' . $extension;
+            $destinationPath = base_path() . '/public/uploads/images/' . $fileName;
+            Image::make($image)->fit(120, 120)->save($destinationPath);
+            // aşağıdaki kısım canlı ortama aktarırken '/public/uploads/images/' yapılacak.
+            $input['image'] = '/uploads/images/' . $fileName;
+            File::delete(base_path() . $user->image);
+        } else {
+            $input['image'] = $user->image;
+        }
+
+        $user->about = $input['about'];
+        $user->image = $input['image'];
+
+        if ($user->save()) {
+            return response()->json(['message' => 'Kullanıcı başarıyla düzenlendi.'], 200);
+        } else {
+            return response()->json(['message' => 'Kullanıcı düzenlenirken bir sorun oluştu.'], 400);
         }
     }
 }
