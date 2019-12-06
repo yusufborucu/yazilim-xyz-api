@@ -11,6 +11,11 @@ use Illuminate\Support\Facades\DB;
 
 class QuestionController extends Controller
 {
+    public function index()
+    {
+
+    }
+
     public function store()
     {
         $validator = Validator::make(request()->all(), [
@@ -45,11 +50,6 @@ class QuestionController extends Controller
         return response()->json(['message' => 'Soru başarıyla eklendi.'], 200);
     }
 
-    public function index()
-    {
-
-    }
-
     public function show($id)
     {
 
@@ -76,5 +76,20 @@ class QuestionController extends Controller
             unset($last_question['created_at']);
         }
         return response()->json($last_questions, 200);
+    }
+
+    public function question_detail($id)
+    {
+        $question = Question::with('user', 'tags', 'answers')->find($id);
+        Carbon::setLocale('tr');
+        $question->date = Carbon::parse($question->created_at)->diffForHumans();
+        unset($question['created_at']);
+        $question->answer_count = $question->answers->count();
+        foreach ($question->answers as $answer) {
+            $answer->user;
+            $answer->date = Carbon::parse($answer->created_at)->diffForHumans();
+            unset($answer['created_at']);
+        }
+        return response()->json($question, 200);
     }
 }

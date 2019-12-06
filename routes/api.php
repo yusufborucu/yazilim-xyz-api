@@ -9,6 +9,8 @@ Route::post('new_password/{remember_token}', 'UserController@new_password');
 // SORU İŞLEMLERİ
 // Anasayfa son sorular
 Route::get('last_questions', 'QuestionController@last_questions');
+// Soru detayı
+Route::get('question_detail/{id}', 'QuestionController@question_detail');
 
 Route::group(['middleware' => 'auth:api'], function() {
     // KULLANICI İŞLEMLERİ
@@ -18,4 +20,7 @@ Route::group(['middleware' => 'auth:api'], function() {
 
     // SORU İŞLEMLERİ
     Route::apiResource('question', 'QuestionController');
+
+    // CEVAP İŞLEMLERİ
+    Route::apiResource('answer', 'AnswerController');
 });

@@ -12,7 +12,7 @@ class Question extends Model
 
     public function user()
     {
-        return $this->hasOne('App\User', 'id', 'user_id')->select('id', 'username');
+        return $this->hasOne('App\User', 'id', 'user_id')->select('id', 'username', 'image');
     }
 
     public function tags()
@@ -22,6 +22,6 @@ class Question extends Model
 
     public function answers()
     {
-        return $this->hasMany('App\Models\Answer', 'question_id', 'id')->select('id', 'question_id', 'answer');
+        return $this->hasMany('App\Models\Answer', 'question_id', 'id')->select('id', 'user_id', 'question_id', 'answer', 'created_at');
     }
 }
