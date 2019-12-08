@@ -23,4 +23,5 @@ Route::group(['middleware' => 'auth:api'], function() {
 
     // CEVAP İŞLEMLERİ
     Route::apiResource('answer', 'AnswerController');
+    Route::post('vote', 'AnswerController@vote');
 });

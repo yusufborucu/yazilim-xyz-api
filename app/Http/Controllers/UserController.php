@@ -59,6 +59,8 @@ class UserController extends Controller
         if ($existUser != null) {
             if (Auth::attempt(['email' => request('email'), 'password' => request('password') . $existUser->salt])) {
                 $user = Auth::user();
+                $success['username'] = $user->username;
+                $success['user_id'] = $user->id;
                 $success['token'] = $user->createToken('MyApp')->accessToken;
                 return response()->json($success, 200);
             } else {

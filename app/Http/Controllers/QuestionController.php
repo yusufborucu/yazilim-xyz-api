@@ -89,6 +89,8 @@ class QuestionController extends Controller
             $answer->user;
             $answer->date = Carbon::parse($answer->created_at)->diffForHumans();
             unset($answer['created_at']);
+            $answer->scores;
+            $answer->score = $answer->scores()->where('status', true)->count() - $answer->scores()->where('status', false)->count();
         }
         return response()->json($question, 200);
     }

@@ -14,4 +14,9 @@ class Answer extends Model
     {
         return $this->hasOne('App\User', 'id', 'user_id')->select('id', 'username', 'image');
     }
+
+    public function scores()
+    {
+        return $this->hasMany('App\Models\AnswerScore', 'answer_id', 'id')->select('answer_id', 'user_id', 'status');
+    }
 }
