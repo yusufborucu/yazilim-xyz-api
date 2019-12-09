@@ -22,15 +22,33 @@ class UserController extends Controller
     {
         $validator = Validator::make(request()->all(), [
             'username' => 'required',
-            'email' => 'required|email|unique:users',
+            'email' => 'required',
             'password' => 'required',
-            'c_password' => 'required|same:password'
+            'c_password' => 'required'
         ]);
         if ($validator->fails()) {
-            return response()->json(['message' => 'Lütfen tüm alanları doldurunuz.'], 400);
+            return $this->response_message('Lütfen tüm alanları doldurunuz.', 400);
         }
 
         $input = request()->all();
+
+        if (!filter_var($input['email'], FILTER_VALIDATE_EMAIL)) {
+            return $this->response_message('Lütfen geçerli bir e-posta adresi giriniz.', 400);
+        }
+
+        if ($input['password'] != $input['c_password'])
+            return $this->response_message('Girdiğiniz parolalar eşleşmiyor.', 400);
+
+        $existUsername = User::where('username', $input['username'])->first();
+        if ($existUsername != null) {
+            return $this->response_message('Bu kullanıcı adı zaten sistemde kayıtlı.', 400);
+        }
+
+        $existEmail = User::where('email', $input['email'])->first();
+        if ($existEmail != null) {
+            return $this->response_message('Bu e-posta adresi zaten sistemde kayıtlı.', 400);
+        }
+
         $salt = $this->generate_salt();
         $input['salt'] = $salt;
         $input['password'] = bcrypt($input['password'] . $salt);
@@ -39,20 +57,24 @@ class UserController extends Controller
             User::create($input);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => 'Kullanıcı eklenirken bir sorun oluştu.'], 400);
+            return $this->response_message('Kullanıcı eklenirken bir sorun oluştu.', 500);
         }
         DB::commit();
-        return response()->json(['message' => 'Kullanıcı başarıyla eklendi.'], 200);
+        return $this->response_message('Kullanıcı başarıyla eklendi.', 200);
     }
 
     public function login()
     {
         $validator = Validator::make(request()->all(), [
-            'email' => 'required|email',
+            'email' => 'required',
             'password' => 'required'
         ]);
         if ($validator->fails()) {
-            return response()->json(['message' => 'Lütfen tüm alanları doldurunuz.'], 400);
+            return $this->response_message('Lütfen tüm alanları doldurunuz.', 400);
+        }
+
+        if (!filter_var(request('email'), FILTER_VALIDATE_EMAIL)) {
+            return $this->response_message('Lütfen geçerli bir e-posta adresi giriniz.', 400);
         }
 
         $existUser = User::where('email', request('email'))->first();
@@ -64,20 +86,24 @@ class UserController extends Controller
                 $success['token'] = $user->createToken('MyApp')->accessToken;
                 return response()->json($success, 200);
             } else {
-                return response()->json(['message' => 'E-posta adresi veya parola yanlış.'], 401);
+                return $this->response_message('E-posta adresi veya parola yanlış.', 400);
             }
         } else {
-            return response()->json(['message' => 'Bu e-posta adresi sistemde kayıtlı değil.'], 401);
+            return $this->response_message('Bu e-posta adresi sistemde kayıtlı değil.', 400);
         }
     }
 
     public function forgot()
     {
         $validator = Validator::make(request()->all(), [
-            'email' => 'required|email'
+            'email' => 'required'
         ]);
         if ($validator->fails()) {
-            return response()->json(['message' => 'Lütfen tüm alanları doldurunuz.'], 400);
+            return $this->response_message('Lütfen tüm alanları doldurunuz.', 400);
+        }
+
+        if (!filter_var(request('email'), FILTER_VALIDATE_EMAIL)) {
+            return $this->response_message('Lütfen geçerli bir e-posta adresi giriniz.', 400);
         }
 
         $email = request()->email;
@@ -96,9 +122,9 @@ class UserController extends Controller
                 'url' => $url
             );
             $this->send_mail('email.forgot', $data, $email, $subject);
-            return response()->json(['message' => 'Parola sıfırlama linki başarıyla gönderildi. Lütfen e-posta adresinize gelen linke tıklayınız.'], 200);
+            return $this->response_message('Parola sıfırlama linki başarıyla gönderildi. Lütfen e-posta adresinize gelen linke tıklayınız.', 200);
         } else {
-            return response()->json(['message' => 'Bu e-posta adresi sistemde kayıtlı değil.'], 401);
+            return $this->response_message('Bu e-posta adresi sistemde kayıtlı değil.', 400);
         }
     }
 
@@ -106,11 +132,14 @@ class UserController extends Controller
     {
         $validator = Validator::make(request()->all(), [
             'password' => 'required',
-            'c_password' => 'required|same:password'
+            'c_password' => 'required'
         ]);
         if ($validator->fails()) {
-            return response()->json(['message' => 'Lütfen tüm alanları doldurunuz.'], 400);
+            return $this->response_message('Lütfen tüm alanları doldurunuz.', 400);
         }
+
+        if (request('password') != request('c_password'))
+            return $this->response_message('Girdiğiniz parolalar eşleşmiyor.', 400);
 
         $password = request()->password;
 
@@ -131,9 +160,9 @@ class UserController extends Controller
             );
             $this->send_mail('email.new_password', $data, $isExist->email, $subject);
 
-            return response()->json(['message' => 'Parola sıfırlama işlemi başarıyla tamamlandı.'], 200);
+            return $this->response_message('Parola sıfırlama işlemi başarıyla tamamlandı.', 200);
         } else {
-            return response()->json(['message' => 'Böyle bir kullanıcı mevcut değil.'], 401);
+            return $this->response_message('Böyle bir kullanıcı mevcut değil.', 400);
         }
     }
 
@@ -141,7 +170,7 @@ class UserController extends Controller
     {
         $user = Auth::user();
         OAuthAccessToken::where('user_id', $user->id)->delete();
-        return response()->json(['message' => 'Başarıyla çıkış yaptınız.'], 200);
+        return $this->response_message('Başarıyla çıkış yaptınız.', 200);
     }
 
     public function profile()
@@ -170,7 +199,7 @@ class UserController extends Controller
             'about' => 'required'
         ]);
         if ($validator->fails()) {
-            return response()->json(['message' => 'Lütfen tüm alanları doldurunuz.'], 400);
+            return $this->response_message('Lütfen tüm alanları doldurunuz.', 400);
         }
 
         $user = Auth::user();
@@ -193,9 +222,9 @@ class UserController extends Controller
         $user->image = $input['image'];
 
         if ($user->save()) {
-            return response()->json(['message' => 'Kullanıcı başarıyla düzenlendi.'], 200);
+            return $this->response_message('Kullanıcı başarıyla düzenlendi.', 200);
         } else {
-            return response()->json(['message' => 'Kullanıcı düzenlenirken bir sorun oluştu.'], 400);
+            return $this->response_message('Kullanıcı düzenlenirken bir sorun oluştu.', 400);
         }
     }
 }

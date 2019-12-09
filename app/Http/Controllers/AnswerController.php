@@ -4,12 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\Answer;
 use App\Models\AnswerScore;
+use App\Necessary;
 use Validator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class AnswerController extends Controller
 {
+    use Necessary;
+
     public function index()
     {
 
@@ -22,7 +25,7 @@ class AnswerController extends Controller
             'answer' => 'required'
         ]);
         if ($validator->fails()) {
-            return response()->json(['message' => 'Lütfen tüm alanları doldurunuz.'], 400);
+            return $this->response_message('Lütfen tüm alanları doldurunuz.', 400);
         }
 
         $input = request()->all();
@@ -34,10 +37,10 @@ class AnswerController extends Controller
             Answer::create($input);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => 'Cevap eklenirken bir sorun oluştu.'], 400);
+            return $this->response_message('Cevap eklenirken bir sorun oluştu.', 400);
         }
         DB::commit();
-        return response()->json(['message' => 'Cevap başarıyla eklendi.'], 200);
+        return $this->response_message('Cevap başarıyla eklendi.', 200);
     }
 
     public function show($id)
@@ -62,7 +65,7 @@ class AnswerController extends Controller
             'status' => 'required'
         ]);
         if ($validator->fails()) {
-            return response()->json(['message' => 'Lütfen tüm alanları doldurunuz.'], 400);
+            return $this->response_message('Lütfen tüm alanları doldurunuz.', 400);
         }
 
         $user = Auth::user();
@@ -84,9 +87,9 @@ class AnswerController extends Controller
             }
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => 'Oy eklenirken bir sorun oluştu.'], 400);
+            return $this->response_message('Oy eklenirken bir sorun oluştu.', 400);
         }
         DB::commit();
-        return response()->json(['message' => 'Oy başarıyla eklendi.'], 200);
+        return $this->response_message('Oy başarıyla eklendi.', 200);
     }
 }

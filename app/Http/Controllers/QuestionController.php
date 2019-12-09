@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Question;
 use App\Models\QuestionTag;
+use App\Necessary;
 use Carbon\Carbon;
 use Validator;
 use Illuminate\Support\Facades\Auth;
@@ -11,6 +12,8 @@ use Illuminate\Support\Facades\DB;
 
 class QuestionController extends Controller
 {
+    use Necessary;
+
     public function index()
     {
 
@@ -24,7 +27,7 @@ class QuestionController extends Controller
             'tags' => 'required'
         ]);
         if ($validator->fails()) {
-            return response()->json(['message' => 'Lütfen tüm alanları doldurunuz.'], 400);
+            return $this->response_message('Lütfen tüm alanları doldurunuz.', 400);
         }
 
         $input = request()->all();
@@ -44,10 +47,10 @@ class QuestionController extends Controller
             }
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => 'Soru eklenirken bir sorun oluştu.'], 400);
+            return $this->response_message('Soru eklenirken bir sorun oluştu.', 400);
         }
         DB::commit();
-        return response()->json(['message' => 'Soru başarıyla eklendi.'], 200);
+        return $this->response_message('Soru başarıyla eklendi.', 200);
     }
 
     public function show($id)

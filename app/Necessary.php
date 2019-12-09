@@ -28,4 +28,29 @@ trait Necessary
             $message->from('yazilim.xyz0@gmail.com', 'yazilim.xyz');
         });
     }
+
+    public function response_message($text, $status_code)
+    {
+        $type = "";
+        $title = "";
+        switch ($status_code) {
+            case 200:
+                $type = 'success';
+                $title = 'Başarılı!';
+                break;
+            case 400:
+                $type = 'warn';
+                $title = 'Uyarı!';
+                break;
+            case 500:
+                $type = 'error';
+                $title = 'Hata!';
+                break;
+        }
+        return response()->json([
+            'type' => $type,
+            'title' => $title,
+            'text' => $text
+        ], $status_code);
+    }
 }
