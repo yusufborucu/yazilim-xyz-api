@@ -70,7 +70,10 @@ class QuestionController extends Controller
 
     public function last_questions()
     {
-        $last_questions = Question::with('user', 'tags', 'answers')->select('id', 'user_id', 'title', 'reading', 'created_at')->get()->take(10);
+        $last_questions = Question::with('user', 'tags', 'answers')
+                          ->select('id', 'user_id', 'title', DB::raw('substr(description, 1, 200) as description'), 'reading', 'created_at')
+                          ->get()
+                          ->take(10);
         Carbon::setLocale('tr');
         foreach ($last_questions as $last_question) {
             $last_question['answer_count'] = $last_question->answers->count();
@@ -84,6 +87,9 @@ class QuestionController extends Controller
     public function question_detail($id)
     {
         $question = Question::with('user', 'tags', 'answers')->find($id);
+        $question->reading = $question->reading + 1;
+        $question->save();
+
         Carbon::setLocale('tr');
         $question->date = Carbon::parse($question->created_at)->diffForHumans();
         unset($question['created_at']);
@@ -96,5 +102,24 @@ class QuestionController extends Controller
             $answer->score = $answer->scores()->where('status', true)->count() - $answer->scores()->where('status', false)->count();
         }
         return response()->json($question, 200);
+    }
+
+    public function search()
+    {
+        $text = request()->text;
+        $questions = Question::with('user', 'tags', 'answers')
+                     ->select('id', 'user_id', 'title', DB::raw('substr(description, 1, 200) as description'), 'reading', 'created_at')
+                     ->where(function ($query) use ($text) { $query->where('title', 'like', '%' . $text . '%'); })
+                     ->orWhere(function ($query) use ($text) { $query->where('description', 'like', '%' . $text . '%'); })
+                     ->orderBy('created_at', 'desc')
+                     ->get();
+        Carbon::setLocale('tr');
+        foreach ($questions as $question) {
+            $question['answer_count'] = $question->answers->count();
+            unset($question['answers']);
+            $question->date = Carbon::parse($question->created_at)->diffForHumans();
+            unset($question['created_at']);
+        }
+        return response()->json($questions, 200);
     }
 }
