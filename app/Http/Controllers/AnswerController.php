@@ -74,14 +74,21 @@ class AnswerController extends Controller
         DB::beginTransaction();
         try {
             $exist = AnswerScore::where('answer_id', $input['answer_id'])->where('user_id', $user->id)->first();
+            $answer_user = Answer::find($input['answer_id'])->user;
             if ($exist != null) {
                 if ($exist->status != $input['status']) {
+                    $answer_user->score = $input['status'] ? $answer_user->score + 1 : $answer_user->score - 1;
+                    $answer_user->save();
                     $exist->status = $input['status'];
                     $exist->save();
                 } else {
+                    $answer_user->score = $input['status'] ? $answer_user->score - 1 : $answer_user->score;
+                    $answer_user->save();
                     $exist->delete();
                 }
             } else {
+                $answer_user->score = $input['status'] ? $answer_user->score + 1 : $answer_user->score - 1;
+                $answer_user->save();
                 $input['user_id'] = $user->id;
                 AnswerScore::create($input);
             }

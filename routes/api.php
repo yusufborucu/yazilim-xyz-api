@@ -9,18 +9,24 @@ Route::post('login', 'UserController@login');
 Route::post('forgot', 'UserController@forgot');
 // Parola sıfırla
 Route::post('new_password/{remember_token}', 'UserController@new_password');
-// Kişi detayı
-Route::get('user_detail/{id}', 'UserController@user_detail');
 
 // SORU İŞLEMLERİ
 // Anasayfa son sorular
 Route::get('last_questions', 'QuestionController@last_questions');
 // Soru detayı
 Route::get('question_detail/{id}', 'QuestionController@question_detail');
+
+// GENEL İŞLEMLER
 // Arama
-Route::post('search', 'QuestionController@search');
+Route::post('search', 'GeneralController@search');
+// Kişi detayı
+Route::get('user_detail/{id}', 'GeneralController@user_detail');
 // Etiket detayı
-Route::get('tag_detail/{tag}', 'QuestionController@tag_detail');
+Route::get('tag_detail/{tag}', 'GeneralController@tag_detail');
+// Tüm en iyiler
+Route::get('all_best', 'GeneralController@all_best');
+// Tüm etiketler
+Route::get('all_tags', 'GeneralController@all_tags');
 
 Route::group(['middleware' => 'auth:api'], function() {
     // KULLANICI İŞLEMLERİ

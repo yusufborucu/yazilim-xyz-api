@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Question;
 use App\Models\QuestionTag;
 use App\Necessary;
+use App\User;
 use Carbon\Carbon;
 use Validator;
 use Illuminate\Support\Facades\Auth;
@@ -81,7 +82,11 @@ class QuestionController extends Controller
             $last_question->date = Carbon::parse($last_question->created_at)->diffForHumans();
             unset($last_question['created_at']);
         }
-        return response()->json($last_questions, 200);
+        $response['last_questions'] = $last_questions;
+        $response['last_tags'] = QuestionTag::select('tag', DB::raw('count(*) as total'))->groupBy('tag')->orderBy('created_at', 'desc')->limit(7)->get();
+        $response['popular_tags'] = QuestionTag::select('tag', DB::raw('count(*) as total'))->groupBy('tag')->orderBy('total', 'desc')->limit(7)->get();
+        $response['best'] = User::select('id', 'username', 'image', 'score')->where('score', '>', 0)->orderBy('score', 'desc')->limit(3)->get();
+        return response()->json($response, 200);
     }
 
     public function question_detail($id)
@@ -102,43 +107,5 @@ class QuestionController extends Controller
             $answer->score = $answer->scores()->where('status', true)->count() - $answer->scores()->where('status', false)->count();
         }
         return response()->json($question, 200);
-    }
-
-    public function search()
-    {
-        $text = request()->text;
-        $questions = Question::with('user', 'tags', 'answers')
-                     ->select('id', 'user_id', 'title', DB::raw('substr(description, 1, 200) as description'), 'reading', 'created_at')
-                     ->where(function ($query) use ($text) { $query->where('title', 'like', '%' . $text . '%'); })
-                     ->orWhere(function ($query) use ($text) { $query->where('description', 'like', '%' . $text . '%'); })
-                     ->orderBy('created_at', 'desc')
-                     ->get();
-        Carbon::setLocale('tr');
-        foreach ($questions as $question) {
-            $question['answer_count'] = $question->answers->count();
-            unset($question['answers']);
-            $question->date = Carbon::parse($question->created_at)->diffForHumans();
-            unset($question['created_at']);
-        }
-        return response()->json($questions, 200);
-    }
-
-    public function tag_detail($tag)
-    {
-        $response = array();
-        Carbon::setLocale('tr');
-        $question_ids = QuestionTag::select('question_id')->where('tag', $tag)->get();
-        foreach ($question_ids as $question_id) {
-            $question = Question::with('user', 'tags', 'answers')
-                        ->select('id', 'user_id', 'title', DB::raw('substr(description, 1, 200) as description'), 'reading', 'created_at')
-                        ->where('id', $question_id->question_id)
-                        ->first();
-            $question['answer_count'] = $question->answers->count();
-            unset($question['answers']);
-            $question->date = Carbon::parse($question->created_at)->diffForHumans();
-            unset($question['created_at']);
-            array_push($response, $question);
-        }
-        return response()->json($response, 200);
     }
 }

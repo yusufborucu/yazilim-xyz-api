@@ -176,19 +176,15 @@ class UserController extends Controller
     public function profile()
     {
         $user = Auth::user();
-        $questions = Question::with('answers')->where('user_id', $user->id)->get();
-        $answer_count_sum = 0;
-        foreach ($questions as $question) {
-            $answer_count = Answer::where('question_id', $question->id)->count();
-            $answer_count_sum += $answer_count;
-        }
+        $question_count = Question::where('user_id', $user->id)->count();
+        $answer_count = Answer::where('user_id', $user->id)->count();
         $response = (object)array(
             'username' => $user->username,
             'image' => $user->image,
             'score' => $user->score,
             'about' => $user->about,
-            'question_count' => $questions->count(),
-            'answer_count' => $answer_count_sum
+            'question_count' => $question_count,
+            'answer_count' => $answer_count
         );
         return response()->json($response, 200);
     }
@@ -226,25 +222,5 @@ class UserController extends Controller
         } else {
             return $this->response_message('Kullanıcı düzenlenirken bir sorun oluştu.', 400);
         }
-    }
-
-    public function user_detail($id)
-    {
-        $user = User::find($id);
-        $questions = Question::with('answers')->where('user_id', $user->id)->get();
-        $answer_count_sum = 0;
-        foreach ($questions as $question) {
-            $answer_count = Answer::where('question_id', $question->id)->count();
-            $answer_count_sum += $answer_count;
-        }
-        $response = (object)array(
-            'username' => $user->username,
-            'image' => $user->image,
-            'score' => $user->score,
-            'about' => $user->about,
-            'question_count' => $questions->count(),
-            'answer_count' => $answer_count_sum
-        );
-        return response()->json($response, 200);
     }
 }

@@ -12,7 +12,7 @@ class Answer extends Model
 
     public function user()
     {
-        return $this->hasOne('App\User', 'id', 'user_id')->select('id', 'username', 'image');
+        return $this->hasOne('App\User', 'id', 'user_id')->select('id', 'username', 'image', 'score');
     }
 
     public function scores()
