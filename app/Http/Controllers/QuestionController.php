@@ -122,4 +122,23 @@ class QuestionController extends Controller
         }
         return response()->json($questions, 200);
     }
+
+    public function tag_detail($tag)
+    {
+        $response = array();
+        Carbon::setLocale('tr');
+        $question_ids = QuestionTag::select('question_id')->where('tag', $tag)->get();
+        foreach ($question_ids as $question_id) {
+            $question = Question::with('user', 'tags', 'answers')
+                        ->select('id', 'user_id', 'title', DB::raw('substr(description, 1, 200) as description'), 'reading', 'created_at')
+                        ->where('id', $question_id->question_id)
+                        ->first();
+            $question['answer_count'] = $question->answers->count();
+            unset($question['answers']);
+            $question->date = Carbon::parse($question->created_at)->diffForHumans();
+            unset($question['created_at']);
+            array_push($response, $question);
+        }
+        return response()->json($response, 200);
+    }
 }
