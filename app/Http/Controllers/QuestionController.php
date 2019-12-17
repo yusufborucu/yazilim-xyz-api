@@ -73,6 +73,7 @@ class QuestionController extends Controller
     {
         $last_questions = Question::with('user', 'tags', 'answers')
                           ->select('id', 'user_id', 'title', DB::raw('substr(description, 1, 200) as description'), 'reading', 'created_at')
+                          ->orderBy('created_at', 'desc')
                           ->get()
                           ->take(10);
         Carbon::setLocale('tr');
