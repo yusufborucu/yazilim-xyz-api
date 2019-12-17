@@ -71,6 +71,11 @@ class AnswerController extends Controller
         $user = Auth::user();
         $input = request()->all();
 
+        $can_vote = Answer::where('user_id', $user->id)->count();
+        if ($can_vote < 3) {
+            return $this->response_message('Oy verebilmek için en az 3 cevap yazmış olmanız gerekmektedir.', 400);
+        }
+
         DB::beginTransaction();
         try {
             $exist = AnswerScore::where('answer_id', $input['answer_id'])->where('user_id', $user->id)->first();
