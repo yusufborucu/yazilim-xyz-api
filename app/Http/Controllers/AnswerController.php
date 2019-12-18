@@ -72,10 +72,10 @@ class AnswerController extends Controller
             $isExist->save();
         } catch (\Exception $e) {
             DB::rollBack();
-            return $this->response_message('Cevap eklenirken bir sorun oluştu.', 400);
+            return $this->response_message('Cevap düzenlenirken bir sorun oluştu.', 400);
         }
         DB::commit();
-        return $this->response_message('Cevap başarıyla eklendi.', 200);
+        return $this->response_message('Cevap başarıyla düzenlendi.', 200);
     }
 
     public function destroy($id)
