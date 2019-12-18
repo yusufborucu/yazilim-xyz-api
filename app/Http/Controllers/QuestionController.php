@@ -58,7 +58,20 @@ class QuestionController extends Controller
 
     public function show($id)
     {
-
+        $user = Auth::user();
+        $question = Question::with('tags')->select('id', 'title', 'description')->where('user_id', $user->id)->where('id', $id)->first();
+        if ($question == null) {
+            return $this->response_message('Böyle bir soru mevcut değil.', 500);
+        }
+        $tags = "";
+        $question_tags = $question->tags;
+        foreach ($question_tags as $question_tag) {
+            $tags .= $question_tag->tag . ",";
+        }
+        unset($question->tags);
+        $tags = substr($tags, 0, -1);
+        $question->tags = $tags;
+        return response()->json($question, 200);
     }
 
     public function update($id)
