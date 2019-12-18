@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Answer;
+use App\Models\AnswerScore;
 use App\Models\Question;
 use App\Models\QuestionTag;
 use App\Necessary;
@@ -61,12 +63,68 @@ class QuestionController extends Controller
 
     public function update($id)
     {
+        $validator = Validator::make(request()->all(), [
+            'title' => 'required',
+            'description' => 'required',
+            'tags' => 'required'
+        ]);
+        if ($validator->fails()) {
+            return $this->response_message('Lütfen tüm alanları doldurunuz.', 400);
+        }
 
+        $input = request()->all();
+        $user = Auth::user();
+
+        $isExist = Question::where('user_id', $user->id)->where('id', $id)->first();
+        if ($isExist == null) {
+            return $this->response_message('Böyle bir soru mevcut değil.', 500);
+        }
+
+        DB::beginTransaction();
+        try {
+            $isExist->title = $input['title'];
+            $isExist->description = $input['description'];
+            $isExist->save();
+
+            QuestionTag::where('question_id', $id)->delete();
+            $tags = explode(',', $input['tags']);
+            foreach ($tags as $tag) {
+                $question_tag = new QuestionTag;
+                $question_tag->question_id = $id;
+                $question_tag->tag = $tag;
+                $question_tag->save();
+            }
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->response_message('Soru düzenlenirken bir sorun oluştu.', 400);
+        }
+        DB::commit();
+        return $this->response_message('Soru başarıyla düzenlendi.', 200);
     }
 
     public function destroy($id)
     {
+        $user = Auth::user();
+        $question = Question::where('user_id', $user->id)->where('id', $id)->first();
+        if ($question == null) {
+            return $this->response_message('Böyle bir soru mevcut değil.', 500);
+        }
 
+        DB::beginTransaction();
+        try {
+            QuestionTag::where('question_id', $id)->delete();
+            $answers = Answer::where('question_id', $id)->get();
+            foreach ($answers as $answer) {
+                AnswerScore::where('answer_id', $answer->id)->delete();
+            }
+            Answer::where('question_id', $id)->delete();
+            $question->delete();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->response_message('Soru silinirken bir sorun oluştu.', 400);
+        }
+        DB::commit();
+        return $this->response_message('Soru başarıyla silindi.', 200);
     }
 
     public function last_questions()

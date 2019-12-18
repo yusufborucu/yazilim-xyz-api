@@ -50,12 +50,52 @@ class AnswerController extends Controller
 
     public function update($id)
     {
+        $validator = Validator::make(request()->all(), [
+            'question_id' => 'required',
+            'answer' => 'required'
+        ]);
+        if ($validator->fails()) {
+            return $this->response_message('Lütfen tüm alanları doldurunuz.', 400);
+        }
 
+        $input = request()->all();
+        $user = Auth::user();
+
+        $isExist = Answer::where('user_id', $user->id)->where('id', $id)->first();
+        if ($isExist == null) {
+            return $this->response_message('Böyle bir cevap mevcut değil.', 500);
+        }
+
+        DB::beginTransaction();
+        try {
+            $isExist->answer = $input['answer'];
+            $isExist->save();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->response_message('Cevap eklenirken bir sorun oluştu.', 400);
+        }
+        DB::commit();
+        return $this->response_message('Cevap başarıyla eklendi.', 200);
     }
 
     public function destroy($id)
     {
+        $user = Auth::user();
+        $answer = Answer::where('user_id', $user->id)->where('id', $id)->first();
+        if ($answer == null) {
+            return $this->response_message('Böyle bir cevap mevcut değil.', 500);
+        }
 
+        DB::beginTransaction();
+        try {
+            AnswerScore::where('answer_id', $id)->delete();
+            $answer->delete();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->response_message('Cevap silinirken bir sorun oluştu.', 400);
+        }
+        DB::commit();
+        return $this->response_message('Cevap başarıyla silindi.', 200);
     }
 
     public function vote()
