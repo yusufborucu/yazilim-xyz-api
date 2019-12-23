@@ -41,8 +41,7 @@ class QuestionController extends Controller
             $input['user_id'] = $user->id;
             $question = Question::create($input);
 
-            $tags = explode(',', $input['tags']);
-            foreach ($tags as $tag) {
+            foreach ($input['tags'] as $tag) {
                 $question_tag = new QuestionTag;
                 $question_tag->question_id = $question->id;
                 $question_tag->tag = $tag;
@@ -63,13 +62,11 @@ class QuestionController extends Controller
         if ($question == null) {
             return $this->response_message('Böyle bir soru mevcut değil.', 500);
         }
-        $tags = "";
-        $question_tags = $question->tags;
-        foreach ($question_tags as $question_tag) {
-            $tags .= $question_tag->tag . ",";
+        $tags = array();
+        foreach ($question->tags as $tag) {
+            array_push($tags, $tag->tag);
         }
         unset($question->tags);
-        $tags = substr($tags, 0, -1);
         $question->tags = $tags;
         return response()->json($question, 200);
     }
@@ -100,8 +97,7 @@ class QuestionController extends Controller
             $isExist->save();
 
             QuestionTag::where('question_id', $id)->delete();
-            $tags = explode(',', $input['tags']);
-            foreach ($tags as $tag) {
+            foreach ($input['tags'] as $tag) {
                 $question_tag = new QuestionTag;
                 $question_tag->question_id = $id;
                 $question_tag->tag = $tag;
