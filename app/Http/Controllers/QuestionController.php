@@ -17,11 +17,6 @@ class QuestionController extends Controller
 {
     use Necessary;
 
-    public function index()
-    {
-
-    }
-
     public function store()
     {
         $validator = Validator::make(request()->all(), [

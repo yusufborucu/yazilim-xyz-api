@@ -13,11 +13,6 @@ class AnswerController extends Controller
 {
     use Necessary;
 
-    public function index()
-    {
-
-    }
-
     public function store()
     {
         $validator = Validator::make(request()->all(), [
@@ -41,11 +36,6 @@ class AnswerController extends Controller
         }
         DB::commit();
         return $this->response_message('Cevap başarıyla eklendi.', 200);
-    }
-
-    public function show($id)
-    {
-
     }
 
     public function update($id)
