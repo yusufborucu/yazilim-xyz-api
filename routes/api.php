@@ -28,6 +28,8 @@ Route::get('all_best', 'GeneralController@all_best');
 // Tüm etiketler
 Route::get('all_tags', 'GeneralController@all_tags');
 
+Route::get('test', 'GeneralController@test');
+
 Route::group(['middleware' => 'auth:api'], function() {
     // KULLANICI İŞLEMLERİ
     // Çıkış yap
